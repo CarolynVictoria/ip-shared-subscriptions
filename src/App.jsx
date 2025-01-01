@@ -25,6 +25,9 @@ const App = () => {
 								<th className='text-left'>Parent Subscription ID</th>
 								<th className='text-left'>Term ID</th>
 								<th className='text-left'>User ID</th>
+								<th className='text-left'>Total Tokens</th>
+								<th className='text-left'>Redeemed</th>
+								<th className='text-left'>Unused</th>
 								<th className='text-left'>Child Subscriptions</th>
 							</tr>
 						</thead>
@@ -36,6 +39,9 @@ const App = () => {
 									<td className='align-top'>{item.subscription_id}</td>
 									<td className='align-top'>{item.term_id}</td>
 									<td className='align-top'>{item.uid}</td>
+									<td className='align-top'>{item.total_tokens}</td>
+									<td className='align-top'>{item.redeemed_tokens}</td>
+									<td className='align-top'>{item.unused_tokens}</td>
 									{/* Child Subscriptions Column */}
 									<td>
 										{item.shared_accounts && item.shared_accounts.length > 0 ? (
@@ -43,19 +49,17 @@ const App = () => {
 												<table className='w-full border-collapse child-table'>
 													<thead>
 														<tr>
-															<th className='text-left pb-2'>
-																Child Subscription ID
-															</th>
-															<th className='text-left pb-2'>Child User ID</th>
-															<th className='text-left pb-2'>Email</th>
+															<th className='text-left pb-2'>Child Email</th>
+															<th className='text-left pb-2'>Child Name</th>
+															<th className='text-left pb-2'>Active</th>
 														</tr>
 													</thead>
 													<tbody>
 														{item.shared_accounts.map((child) => (
 															<tr key={child.account_id}>
-																<td className='py-1'>{child.account_id}</td>
-																<td className='py-1'>{child.user_id}</td>
 																<td className='py-1'>{child.email}</td>
+																<td className='py-1'>{child.personal_name}</td>
+																<td className='py-1'>{child.active}</td>
 															</tr>
 														))}
 													</tbody>
