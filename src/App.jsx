@@ -21,55 +21,74 @@ const App = () => {
 					<table className='table w-full'>
 						{/* Table Header */}
 						<thead>
-							<tr>
+							<tr className='text-base-400 bg-base-200 hover:bg-base-100'>
 								<th className='text-left'>Parent Subscription ID</th>
 								<th className='text-left'>Term ID</th>
 								<th className='text-left'>User ID</th>
 								<th className='text-left'>Total Tokens</th>
 								<th className='text-left'>Redeemed</th>
 								<th className='text-left'>Unused</th>
-								<th className='text-left'>Child Subscriptions</th>
 							</tr>
 						</thead>
 						{/* Table Body */}
 						<tbody>
 							{data.map((item) => (
-								<tr key={item.subscription_id} className='hover:bg-base-50'>
-									{/* Parent Columns */}
-									<td className='align-top'>{item.subscription_id}</td>
-									<td className='align-top'>{item.term_id}</td>
-									<td className='align-top'>{item.uid}</td>
-									<td className='align-top'>{item.total_tokens}</td>
-									<td className='align-top'>{item.redeemed_tokens}</td>
-									<td className='align-top'>{item.unused_tokens}</td>
-									{/* Child Subscriptions Column */}
-									<td>
-										{item.shared_accounts && item.shared_accounts.length > 0 ? (
-											<div className='bg-base-50 p-4'>
-												<table className='w-full border-collapse child-table'>
-													<thead>
-														<tr>
-															<th className='text-left pb-2'>Child Email</th>
-															<th className='text-left pb-2'>Child Name</th>
-															<th className='text-left pb-2'>Active</th>
-														</tr>
-													</thead>
-													<tbody>
-														{item.shared_accounts.map((child) => (
-															<tr key={child.account_id}>
-																<td className='py-1'>{child.email}</td>
-																<td className='py-1'>{child.personal_name}</td>
-																<td className='py-1'>{child.active}</td>
+								<React.Fragment key={item.subscription_id}>
+									{/* Parent Row */}
+									<tr>
+										<td className='align-top'>{item.subscription_id}</td>
+										<td className='align-top'>{item.term_id}</td>
+										<td className='align-top'>{item.uid}</td>
+										<td className='align-top'>{item.total_tokens}</td>
+										<td className='align-top'>{item.redeemed_tokens}</td>
+										<td className='align-top'>{item.unused_tokens}</td>
+									</tr>
+									{/* Child Row */}
+									{item.shared_accounts && item.shared_accounts.length > 0 && (
+										<tr>
+											<td colSpan={6} className='p-4'>
+												<div className='w-[90%] mx-auto p-4 rounded-lg overflow-x-auto'>
+													<table className='table w-full'>
+														<thead>
+															<tr className='bg-base-200 '>
+																<th className='text-left text-base-400 pb-2 w-[20%]'>
+																	Child Subscription ID
+																</th>
+																<th className='text-left text-base-400 pb-2 w-[20%]'>
+																	Child User ID
+																</th>
+																<th className='text-left text-base-400 pb-2 w-[30%]'>
+																	Email
+																</th>
+																<th className='text-left text-base-400 pb-2 w-[15%]'>
+																	Status
+																</th>
 															</tr>
-														))}
-													</tbody>
-												</table>
-											</div>
-										) : (
-											<span>No child subscriptions</span>
-										)}
-									</td>
-								</tr>
+														</thead>
+														<tbody>
+															{item.shared_accounts.map((child) => (
+																<tr key={child.account_id}>
+																	<td className='py-1 break-words'>
+																		{child.account_id}
+																	</td>
+																	<td className='py-1 break-words'>
+																		{child.user_id}
+																	</td>
+																	<td className='py-1 break-words'>
+																		{child.email}
+																	</td>
+																	<td className='py-1'>
+																		{child.active ? 'Active' : ''}
+																	</td>
+																</tr>
+															))}
+														</tbody>
+													</table>
+												</div>
+											</td>
+										</tr>
+									)}
+								</React.Fragment>
 							))}
 						</tbody>
 					</table>
