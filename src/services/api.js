@@ -3,9 +3,10 @@ import axios from 'axios';
 export const fetchSharedSubscriptions = async (page = 1, rowsPerPage = 10) => {
 	const offset = (page - 1) * rowsPerPage;
 
+	// 1) Use environment variables (prefixed with REACT_APP_ for create-react-app)
 	const params = {
-		aid: 'p6M0eeA44g',
-		api_token: 'JuXGiK5rAVFQvJY7zDDKjtxCloTKI28CSuTZKY7D',
+		aid: process.env.REACT_APP_PIANO_AID,
+		api_token: process.env.REACT_APP_PIANO_API_TOKEN,
 		limit: rowsPerPage,
 		offset,
 	};
