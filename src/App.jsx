@@ -2,34 +2,29 @@ import React, { useEffect, useState } from 'react';
 import { fetchSharedSubscriptions } from './services/api'; // Import API function
 
 const App = () => {
-	const [data, setData] = useState(null);
+	const [data, setData] = useState([]); // Data for the current page
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState(null);
+	const [currentPage, setCurrentPage] = useState(1); // Current page number
+	const [rowsPerPage, setRowsPerPage] = useState(10); // Rows per page
 
-useEffect(() => {
-	const getData = async () => {
+	const fetchData = async () => {
+		setLoading(true);
+		setError(null);
 		try {
-			const response = await fetchSharedSubscriptions(5); // Fetch with limit 5
-			console.log('Response in App.jsx:', response); // Log the response
-
-			if (response && Array.isArray(response)) {
-				setData(response); // Set the data if SharedSubscriptions is an array
-			} else {
-				console.error('Expected an array but got:', response);
-				setError('SharedSubscriptions not found in the response');
-				setData([]); // Fallback to an empty array
-			}
+			const response = await fetchSharedSubscriptions(currentPage, rowsPerPage); // Fetch data for current page
+			setData(response); // Set fetched data
 		} catch (err) {
-			console.error('Error in getData:', err);
 			setError(err.message);
-			setData([]); // Ensure the app doesn't crash
+			setData([]);
 		} finally {
-			setLoading(false); // Stop the loading spinner
+			setLoading(false);
 		}
 	};
 
-	getData();
-}, []);
+	useEffect(() => {
+		fetchData();
+	}, [currentPage, rowsPerPage]); // Re-fetch data when currentPage or rowsPerPage changes
 
 	if (loading) {
 		return (
@@ -53,7 +48,7 @@ useEffect(() => {
 				Inside Philanthropy Shared Subscriptions
 			</h1>
 
-			{data ? (
+			{data.length > 0 ? (
 				<div className='overflow-x-auto'>
 					<table className='table w-full'>
 						{/* Table Header */}
@@ -80,14 +75,14 @@ useEffect(() => {
 										<td className='align-top'>{item.redeemed_tokens}</td>
 										<td className='align-top'>{item.unused_tokens}</td>
 									</tr>
-									{/* Child Row */}
+									{/* Child Rows */}
 									{item.shared_accounts && item.shared_accounts.length > 0 && (
 										<tr>
 											<td colSpan={6} className='p-4'>
 												<div className='w-[90%] mx-auto p-4 rounded-lg overflow-x-auto'>
 													<table className='table w-full'>
 														<thead>
-															<tr className='bg-base-200 '>
+															<tr className='bg-base-200'>
 																<th className='text-left text-base-400 pb-2 w-[20%]'>
 																	Child Subscription ID
 																</th>
@@ -132,9 +127,43 @@ useEffect(() => {
 				</div>
 			) : (
 				<div className='flex justify-center items-center'>
-					<button className='btn btn-outline loading'>Loading...</button>
+					<p>No data available</p>
 				</div>
 			)}
+
+			{/* Pagination Controls */}
+			<div className='flex justify-between items-center mt-4'>
+				<button
+					className='btn btn-primary'
+					onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+					disabled={currentPage === 1}
+				>
+					Previous
+				</button>
+				<span>Page {currentPage}</span>
+				<button
+					className='btn btn-primary'
+					onClick={() => setCurrentPage((prev) => prev + 1)}
+				>
+					Next
+				</button>
+			</div>
+
+			{/* Rows Per Page Selector */}
+			<div className='flex justify-center mt-4'>
+				<label htmlFor='rowsPerPage' className='mr-2'>
+					Rows per page:
+				</label>
+				<select
+					id='rowsPerPage'
+					value={rowsPerPage}
+					onChange={(e) => setRowsPerPage(Number(e.target.value))}
+				>
+					<option value={10}>10</option>
+					<option value={20}>20</option>
+					<option value={50}>50</option>
+				</select>
+			</div>
 		</div>
 	);
 };

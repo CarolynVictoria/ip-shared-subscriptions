@@ -1,14 +1,16 @@
 import axios from 'axios';
 
 export const fetchSharedSubscriptions = async (
-	limit = 5,
-	offset = 0,
+	page = 1,
+	rowsPerPage = 10,
 	status = 'active'
 ) => {
+	const offset = (page - 1) * rowsPerPage; // Calculate offset based on page and rowsPerPage
+
 	const params = {
 		aid: 'p6M0eeA44g',
 		api_token: 'JuXGiK5rAVFQvJY7zDDKjtxCloTKI28CSuTZKY7D',
-		limit,
+		limit: rowsPerPage,
 		offset,
 		status,
 	};
@@ -20,25 +22,18 @@ export const fetchSharedSubscriptions = async (
 			'Content-Type': 'application/x-www-form-urlencoded',
 			Accept: 'application/json',
 		},
-		params: params, // Send query parameters
+		params, // Send query parameters
 	};
 
 	try {
 		const response = await axios.request(config);
-		console.log('Full API Response:', response.data); // Log the response for debugging
 		if (response.data && response.data.SharedSubscriptions) {
-			console.log('SharedSubscriptions:', response.data.SharedSubscriptions);
-			return response.data.SharedSubscriptions; // Access SharedSubscriptions correctly
+			return response.data.SharedSubscriptions; // Return SharedSubscriptions
 		} else {
-			console.error(
-				'SharedSubscriptions not found in response data:',
-				response.data
-			);
 			throw new Error('SharedSubscriptions not found in response data');
 		}
 	} catch (error) {
 		console.error('Error fetching shared subscriptions:', error);
 		throw error;
 	}
-
 };
