@@ -1,14 +1,51 @@
 import React, { useEffect, useState } from 'react';
-import { sharedSubscriptionsData } from './data-shared-subscriptions';
+import { fetchSharedSubscriptions } from './services/api'; // Import API function
 
 const App = () => {
 	const [data, setData] = useState(null);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState(null);
 
-	useEffect(() => {
-		setTimeout(() => {
-			setData(sharedSubscriptionsData);
-		}, 1000); // Simulate API delay
-	}, []);
+useEffect(() => {
+	const getData = async () => {
+		try {
+			const response = await fetchSharedSubscriptions(5); // Fetch with limit 5
+			console.log('Response in App.jsx:', response); // Log the response
+
+			if (response && Array.isArray(response)) {
+				setData(response); // Set the data if SharedSubscriptions is an array
+			} else {
+				console.error('Expected an array but got:', response);
+				setError('SharedSubscriptions not found in the response');
+				setData([]); // Fallback to an empty array
+			}
+		} catch (err) {
+			console.error('Error in getData:', err);
+			setError(err.message);
+			setData([]); // Ensure the app doesn't crash
+		} finally {
+			setLoading(false); // Stop the loading spinner
+		}
+	};
+
+	getData();
+}, []);
+
+	if (loading) {
+		return (
+			<div className='flex justify-center items-center'>
+				<button className='btn btn-outline loading'>Loading...</button>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className='flex justify-center items-center text-red-500'>
+				{error}
+			</div>
+		);
+	}
 
 	return (
 		<div className='p-8 bg-base-100 min-h-screen text-base-content'>

@@ -1,53 +1,47 @@
 import express from 'express';
-import cors from 'cors';
-import multer from 'multer';
-import fs from 'fs';
+import cors from 'cors'; // Import CORS middleware
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import dotenv from 'dotenv';
+
+dotenv.config(); // Load environment variables
 
 const app = express();
 
-// Middleware
-app.use(cors());
-app.use(express.json());
+// Step 1: Use CORS middleware to allow cross-origin requests from React frontend
+app.use(cors()); // Allow all origins by default, can restrict later if needed
 
-// Configure Multer for file uploads
-const storage = multer.diskStorage({
-	destination: (req, file, cb) => {
-		cb(null, 'uploads/'); // Directory to save files
-	},
-	filename: (req, file, cb) => {
-		cb(null, `${Date.now()}-${file.originalname}`); // Rename the file
-	},
+// Step 2: Add logging to track the requests being proxied to the external API
+app.use('/external-api', (req, res, next) => {
+	console.log('Proxying request to:', process.env.PIANO_API_URL + req.url); // Log the request URL
+	next(); // Pass to the next middleware (the proxy)
 });
 
-const upload = multer({ storage });
+// Step 3: Set up proxy to forward requests to the external API
+app.use(
+	'/external-api',
+	createProxyMiddleware({
+		target: process.env.PIANO_API_URL, // Ensure the target is correct
+		changeOrigin: true, // Modify the origin header to match the target
+		pathRewrite: { '^/external-api': '' }, // Remove '/external-api' from the forwarded requests
+		onProxyReq: (proxyReq, req, res) => {
+			// Log the full URL and query parameters being sent to the external API
+			console.log(`Proxying to: ${process.env.PIANO_API_URL}${req.url}`);
+		},
+	})
+);
 
-// Ensure the 'uploads' directory exists
-if (!fs.existsSync('uploads')) {
-	fs.mkdirSync('uploads');
-}
-
-// Routes
-app.post('/upload', upload.single('file'), (req, res) => {
-	console.log(req.file); // Log info about the uploaded file
-	res.send({ message: 'File uploaded successfully', file: req.file });
+// Step 4: Health check route for testing the server
+app.get('/api/health', (req, res) => {
+	res.send('Server is healthy');
 });
 
-app.get('/', (req, res) => {
-	res.send('Backend is running!');
+// Step 5: Catch-all route for unmatched paths (React will handle static assets and frontend routes)
+app.get('*', (req, res) => {
+	res.status(404).send('Route not found');
 });
 
-// set up test data
-app.get('/api/resource', (req, res) => {
-	const sampleData = [
-		{ id: 1, name: 'Item 1', description: 'This is item 1' },
-		{ id: 2, name: 'Item 2', description: 'This is item 2' },
-		{ id: 3, name: 'Item 3', description: 'This is item 3' },
-	];
-	res.json(sampleData);
-});
-
-// Start the server
-const PORT = 5555;
+// Step 6: Start the server
+const PORT = process.env.BACKEND_PORT || 5555;
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);
 });
