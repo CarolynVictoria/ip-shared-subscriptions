@@ -92,9 +92,6 @@ const App = () => {
 																<th className='text-left text-base-400 pb-2 w-[30%]'>
 																	Email
 																</th>
-																<th className='text-left text-base-400 pb-2 w-[15%]'>
-																	Status
-																</th>
 															</tr>
 														</thead>
 														<tbody>
@@ -108,9 +105,6 @@ const App = () => {
 																	</td>
 																	<td className='py-1 break-words'>
 																		{child.email}
-																	</td>
-																	<td className='py-1'>
-																		{child.active ? 'Active' : ''}
 																	</td>
 																</tr>
 															))}
