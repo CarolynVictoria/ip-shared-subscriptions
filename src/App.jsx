@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { fetchSharedSubscriptions } from './services/api'; // Import API function
+import { fetchMergedSubscriptionData } from './services/api'; // <-- Changed import
 
 const App = () => {
 	const [data, setData] = useState([]); // Data for the current page
@@ -12,8 +12,12 @@ const App = () => {
 		setLoading(true);
 		setError(null);
 		try {
-			const response = await fetchSharedSubscriptions(currentPage, rowsPerPage); // Fetch data for current page
-			setData(response); // Set fetched data
+			// Replaced fetchSharedSubscriptions with fetchMergedSubscriptionData
+			const response = await fetchMergedSubscriptionData(
+				currentPage,
+				rowsPerPage
+			);
+			setData(response);
 		} catch (err) {
 			setError(err.message);
 			setData([]);
@@ -74,6 +78,17 @@ const App = () => {
 										<td className='align-top'>{item.total_tokens}</td>
 										<td className='align-top'>{item.redeemed_tokens}</td>
 										<td className='align-top'>{item.unused_tokens}</td>
+									</tr>
+									{/* Row for Parent's Name & Email */}
+									<tr>
+										<td colSpan={6} className='align-top'>
+											<div className='mt-2'>
+												<strong>Parent Name:</strong> {item.parent_first_name}{' '}
+												{item.parent_last_name}
+												&nbsp;|&nbsp;
+												<strong>Email:</strong> {item.parent_email}
+											</div>
+										</td>
 									</tr>
 									{/* Child Rows */}
 									{item.shared_accounts && item.shared_accounts.length > 0 && (
