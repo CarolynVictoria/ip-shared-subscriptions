@@ -59,11 +59,12 @@ const App = () => {
 						<thead>
 							<tr className='text-base-400 bg-base-200 hover:bg-base-100'>
 								<th className='text-left'>Parent Subscription ID</th>
-								<th className='text-left'>Term ID</th>
+								<th className='text-left'>Term</th>
 								<th className='text-left'>User ID</th>
 								<th className='text-left'>Total Tokens</th>
 								<th className='text-left'>Redeemed</th>
 								<th className='text-left'>Unused</th>
+								<th className='text-left'>Status</th>
 							</tr>
 						</thead>
 						{/* Table Body */}
@@ -73,11 +74,12 @@ const App = () => {
 									{/* Parent Row */}
 									<tr>
 										<td className='align-top'>{item.subscription_id}</td>
-										<td className='align-top'>{item.term_id}</td>
+										<td className='align-top'>{item.term_name}</td>
 										<td className='align-top'>{item.uid}</td>
 										<td className='align-top'>{item.total_tokens}</td>
 										<td className='align-top'>{item.redeemed_tokens}</td>
 										<td className='align-top'>{item.unused_tokens}</td>
+										<td className='align-top'>{item.status_name_in_reports}</td>
 									</tr>
 									{/* Row for Parent's Name & Email */}
 									<tr>

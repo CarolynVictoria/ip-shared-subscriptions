@@ -76,38 +76,88 @@ export const fetchUserDataByUid = async (uid) => {
 };
 
 /**
+ * 2.5) Fetch user details by uid (POST request)
+ *    Returns an object with { first_name, last_name, email, uid, ... }
+ */
+export const fetchParentSubscriptionData = async (subscriptionId) => {
+	// Define a "params" object
+	const params = {
+		aid: process.env.REACT_APP_PIANO_AID,
+		api_token: process.env.REACT_APP_PIANO_API_TOKEN,
+		subscription_id: subscriptionId, // Must pass subscription_id here
+	};
+
+	const config = {
+		method: 'get',
+		url: '/external-api/publisher/subscription/get',
+		headers: { Accept: 'application/json' },
+		// This is where you attach your query parameters
+		params,
+	};
+
+	try {
+		const response = await axios.request(config);
+		if (response.data && response.data.subscription) {
+			return response.data.subscription;
+		} else {
+			throw new Error('Subscription not found in response');
+		}
+	} catch (error) {
+		console.error('Error fetching parent subscription data:', error);
+		throw error;
+	}
+};
+
+/**
  * 3) Merge the shared subscription data with each user’s name & email
  *    Calls fetchSharedSubscriptions, then for each item calls fetchUserDataByUid.
  *    Returns a single, unified array of subscriptions with parent_* fields.
  */
-export const fetchMergedSubscriptionData = async (
-	page = 1,
-	rowsPerPage = 10
-) => {
+export const fetchMergedSubscriptionData = async (page, rowsPerPage) => {
 	try {
-		// 1) Fetch shared subscriptions
 		const sharedSubscriptions = await fetchSharedSubscriptions(
 			page,
 			rowsPerPage
 		);
 
-		// 2) For each subscription, fetch user data and combine
 		const merged = await Promise.all(
 			sharedSubscriptions.map(async (sub) => {
+				// 1) Fetch user data by UID
+				let user = {};
 				try {
-					const user = await fetchUserDataByUid(sub.uid);
-					// Merge the user info into the subscription object
-					return {
-						...sub,
-						parent_email: user.email,
-						parent_first_name: user.first_name,
-						parent_last_name: user.last_name,
-					};
+					user = await fetchUserDataByUid(sub.uid);
 				} catch (error) {
-					console.error(`Error fetching user data for UID: ${sub.uid}`, error);
-					// Return subscription unmodified if the user call fails
-					return sub;
+					console.error(`Error fetching user data for UID ${sub.uid}`, error);
 				}
+
+				// 2) Fetch the parent subscription details
+				let parentSubData = {};
+				try {
+					parentSubData = await fetchParentSubscriptionData(
+						sub.subscription_id
+					);
+				} catch (error) {
+					console.error(
+						`Error fetching subscription for ID ${sub.subscription_id}`,
+						error
+					);
+				}
+
+				// Pull out the fields you need
+				const { status_name_in_reports, term } = parentSubData || {};
+
+				// 3) Merge everything
+				return {
+					...sub,
+					// From user data
+					parent_email: user?.email,
+					parent_first_name: user?.first_name,
+					parent_last_name: user?.last_name,
+
+					// From subscription data
+					status_name_in_reports,
+					term_name: term?.name, // If 'term' is present and has 'name'
+				};
 			})
 		);
 
