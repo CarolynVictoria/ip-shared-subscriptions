@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { fetchMergedSubscriptionData } from './services/api'; // <-- Changed import
+import { fetchMergedSubscriptionData } from './services/api';
+import Header from './components/Header.jsx';
+import Footer from	'./components/Footer.jsx';
 
 const App = () => {
 	const [data, setData] = useState([]); // Data for the current page
@@ -48,16 +50,13 @@ const App = () => {
 
 	return (
 		<div className='p-8 bg-base-100 min-h-screen text-base-content'>
-			<h1 className='text-4xl font-bold text-center mb-8 text-primary'>
-				Inside Philanthropy Shared Subscriptions
-			</h1>
-
+			<Header />
 			{data.length > 0 ? (
 				<div className='overflow-x-auto'>
 					<table className='table w-full'>
 						{/* Table Header */}
 						<thead>
-							<tr className='text-white bg-gray-600 hover:bg-base-100'>
+							<tr className='text-white bg-gray-700'>
 								<th className='text-left'>Subscription ID</th>
 								<th className='text-left'>Term</th>
 								<th className='text-left'>User ID</th>
@@ -136,40 +135,13 @@ const App = () => {
 					<p>No data available</p>
 				</div>
 			)}
-
 			{/* Pagination Controls */}
-			<div className='flex justify-between items-center mt-4'>
-				<button
-					className='btn btn-primary'
-					onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-					disabled={currentPage === 1}
-				>
-					Previous
-				</button>
-				<span>Page {currentPage}</span>
-				<button
-					className='btn btn-primary'
-					onClick={() => setCurrentPage((prev) => prev + 1)}
-				>
-					Next
-				</button>
-			</div>
-
-			{/* Rows Per Page Selector */}
-			<div className='flex justify-center mt-4'>
-				<label htmlFor='rowsPerPage' className='mr-2'>
-					Rows per page:
-				</label>
-				<select
-					id='rowsPerPage'
-					value={rowsPerPage}
-					onChange={(e) => setRowsPerPage(Number(e.target.value))}
-				>
-					<option value={10}>10</option>
-					<option value={20}>20</option>
-					<option value={50}>50</option>
-				</select>
-			</div>
+			<Footer
+				currentPage={currentPage}
+				setCurrentPage={setCurrentPage}
+				rowsPerPage={rowsPerPage}
+				setRowsPerPage={setRowsPerPage}
+			/>
 		</div>
 	);
 };
