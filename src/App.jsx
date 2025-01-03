@@ -57,10 +57,12 @@ const App = () => {
 					<table className='table w-full'>
 						{/* Table Header */}
 						<thead>
-							<tr className='text-base-400 bg-base-200 hover:bg-base-100'>
-								<th className='text-left'>Parent Subscription ID</th>
+							<tr className='text-white bg-gray-600 hover:bg-base-100'>
+								<th className='text-left'>Subscription ID</th>
 								<th className='text-left'>Term</th>
 								<th className='text-left'>User ID</th>
+								<th className='text-left'>Name</th>
+								<th className='text-left'>Email</th>
 								<th className='text-left'>Total Tokens</th>
 								<th className='text-left'>Redeemed</th>
 								<th className='text-left'>Unused</th>
@@ -72,31 +74,24 @@ const App = () => {
 							{data.map((item) => (
 								<React.Fragment key={item.subscription_id}>
 									{/* Parent Row */}
-									<tr>
+									<tr className='text-gray-700 font-bold'>
 										<td className='align-top'>{item.subscription_id}</td>
 										<td className='align-top'>{item.term_name}</td>
 										<td className='align-top'>{item.uid}</td>
+										<td className='align-top'>
+											{item.parent_first_name} {item.parent_last_name}
+										</td>
+										<td className='align-top'>{item.parent_email}</td>
 										<td className='align-top'>{item.total_tokens}</td>
 										<td className='align-top'>{item.redeemed_tokens}</td>
 										<td className='align-top'>{item.unused_tokens}</td>
 										<td className='align-top'>{item.status_name_in_reports}</td>
 									</tr>
-									{/* Row for Parent's Name & Email */}
-									<tr>
-										<td colSpan={6} className='align-top'>
-											<div className='mt-2'>
-												<strong>Parent Name:</strong> {item.parent_first_name}{' '}
-												{item.parent_last_name}
-												&nbsp;|&nbsp;
-												<strong>Email:</strong> {item.parent_email}
-											</div>
-										</td>
-									</tr>
 									{/* Child Rows */}
 									{item.shared_accounts && item.shared_accounts.length > 0 && (
 										<tr>
 											<td colSpan={6} className='p-4'>
-												<div className='w-[90%] mx-auto p-4 rounded-lg overflow-x-auto'>
+												<div className='w-[100%] ml-60 p-4 rounded-lg overflow-x-auto'>
 													<table className='table w-full'>
 														<thead>
 															<tr className='bg-base-200'>
@@ -107,7 +102,7 @@ const App = () => {
 																	Child User ID
 																</th>
 																<th className='text-left text-base-400 pb-2 w-[30%]'>
-																	Email
+																	Child Email
 																</th>
 															</tr>
 														</thead>

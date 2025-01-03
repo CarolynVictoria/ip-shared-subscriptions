@@ -63,13 +63,25 @@ export const fetchUserDataByUid = async (uid) => {
 		const response = await axios.request(config);
 		const { code, user } = response.data || {};
 
-		// Typically, code = 0 means OK in Piano's API.
-		if (code !== 0) {
-			throw new Error(`User call responded with code: ${code}`);
+		// 1) If code === 0, user is found. Return it
+		if (code === 0) {
+			return user;
 		}
 
-		return user; // e.g. { first_name, last_name, email, uid, ... }
+		// 2) If code === 2004, user is not found or canceled. We'll just return null
+		if (code === 2004) {
+			// We won't throw, to avoid the browser console error.
+			// But we can log a warning, or do nothing
+		//	console.warn(
+		//		`User with uid=${uid} not found. Possibly canceled or expired (code: 2004).`
+		//	);
+			return null; // or return {} if you prefer
+		}
+
+		// 3) Otherwise, some other error code
+		throw new Error(`User call responded with code: ${code}`);
 	} catch (error) {
+		// Already logs unexpected errors in the console
 		console.error('Error fetching user data:', error);
 		throw error;
 	}
@@ -128,6 +140,11 @@ export const fetchMergedSubscriptionData = async (page, rowsPerPage) => {
 					user = await fetchUserDataByUid(sub.uid);
 				} catch (error) {
 					console.error(`Error fetching user data for UID ${sub.uid}`, error);
+				}
+				if (!user) {
+					// If it's null, we know the parent user is "not found".
+					// We won't throw an error; we can keep partial data from the subscription itself.
+					user = {}; // so it doesn't break the "parent_first_name" usage
 				}
 
 				// 2) Fetch the parent subscription details
