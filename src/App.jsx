@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react'; // Ensure useEffect is imported
+import React, { useState, useEffect } from 'react';
 import { fetchMergedSubscriptionData } from './services/api';
 import Header from './components/Header.jsx';
 import Footer from './components/Footer.jsx';
+import { getStatusMapping } from './helpers/statusMapping';
 
 const App = () => {
 	const [data, setData] = useState([]);
@@ -11,47 +12,34 @@ const App = () => {
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 	const [filters, setFilters] = useState({ statuses: [] });
 
-	const fetchData = async (statuses = filters.statuses) => {
-		console.log('Fetching data with statuses:', statuses);
+	const fetchData = async (statuses) => {
+		const statusesToUse = statuses || filters.statuses;
 		setLoading(true);
 		setError(null);
 
 		try {
-			// Fetch the full dataset
 			const fullData = await fetchMergedSubscriptionData(
 				currentPage,
 				rowsPerPage
 			);
 
-			// Map statuses to `status_name_in_reports` values
-			const statusMapping = {
-				Active: 'active',
-				Cancelled: 'cancelled',
-				Completed: 'completed',
-				Expired: 'expired',
-				'Payment Failed': 'payment_failed',
-				Upgraded: 'upgraded',
-				'Wont Renew': 'wont_renew',
-			};
+			// Generate the statusMapping object
+			const statusMapping = getStatusMapping();
 
-			const mappedStatuses = statuses
+			// Map selected statuses to API-friendly values
+			const mappedStatuses = statusesToUse
 				.map((status) => statusMapping[status])
 				.filter(Boolean);
 
-			console.log('Mapped statuses for filtering:', mappedStatuses);
-
-			// Filter the data
+			// Filter data based on mapped statuses
 			const filteredData = mappedStatuses.length
 				? fullData.filter((item) =>
 						mappedStatuses.includes(item.status_name_in_reports)
 				  )
 				: fullData;
 
-			console.log('Filtered data:', filteredData);
-
 			setData(filteredData);
 		} catch (err) {
-			console.error('Error during fetch:', err);
 			setError(err.message);
 			setData([]);
 		} finally {
@@ -59,16 +47,9 @@ const App = () => {
 		}
 	};
 
-	// Trigger fetchData when currentPage or rowsPerPage changes
 	useEffect(() => {
-		console.log(
-			'Fetching data for page:',
-			currentPage,
-			'rows per page:',
-			rowsPerPage
-		);
-		fetchData(filters.statuses); // Use the latest filters
-	}, [currentPage, rowsPerPage]); // Dependencies: currentPage and rowsPerPage
+		fetchData();
+	}, [currentPage, rowsPerPage]);
 
 	return (
 		<div className='p-8 bg-base-100 min-h-screen text-base-content'>

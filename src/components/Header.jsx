@@ -1,19 +1,9 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import { statuses } from '../helpers/statusMapping';
 
 const Header = ({ fetchData }) => {
 	const [selectedStatuses, setSelectedStatuses] = useState([]);
-
-	// API-aligned status values
-	const statuses = [
-		{ label: 'Active', value: 'active' },
-		{ label: 'Cancelled', value: 'cancelled' },
-		{ label: 'Completed', value: 'completed' },
-		{ label: 'Expired', value: 'expired' },
-		{ label: 'Payment Failed', value: 'payment_failed' },
-		{ label: 'Upgraded', value: 'upgraded' },
-		{ label: 'Wont Renew', value: 'wont_renew' },
-	];
 
 	const handleStatusChange = (statusValue) => {
 		setSelectedStatuses((prevStatuses) =>
