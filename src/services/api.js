@@ -6,13 +6,16 @@ import axios from 'axios';
 export const fetchSharedSubscriptions = async (page = 1, rowsPerPage = 10) => {
 	const offset = (page - 1) * rowsPerPage;
 
-	// Use environment variables (prefixed with REACT_APP_ for Create React App)
+	// Use environment variables
 	const params = {
 		aid: process.env.REACT_APP_PIANO_AID,
 		api_token: process.env.REACT_APP_PIANO_API_TOKEN,
 		limit: rowsPerPage,
 		offset,
 	};
+
+	// Log the query parameters
+	console.log('Final API request params:', params);
 
 	const config = {
 		method: 'get',
@@ -26,6 +29,8 @@ export const fetchSharedSubscriptions = async (page = 1, rowsPerPage = 10) => {
 
 	try {
 		const response = await axios.request(config);
+		console.log('API response data:', response.data);
+
 		if (response.data && response.data.SharedSubscriptions) {
 			return response.data.SharedSubscriptions;
 		} else {
@@ -42,6 +47,9 @@ export const fetchSharedSubscriptions = async (page = 1, rowsPerPage = 10) => {
  *    Returns an object with { first_name, last_name, email, uid, ... }
  */
 export const fetchUserDataByUid = async (uid) => {
+	// Log the UID
+	console.log('Fetching user data for UID:', uid);
+
 	// Build the form data
 	const data = new URLSearchParams({
 		aid: process.env.REACT_APP_PIANO_AID,
@@ -51,7 +59,7 @@ export const fetchUserDataByUid = async (uid) => {
 
 	const config = {
 		method: 'post',
-		url: '/external-api/publisher/user/get', // or your direct Piano URL if not proxying
+		url: '/external-api/publisher/user/get',
 		headers: {
 			'Content-Type': 'application/x-www-form-urlencoded',
 			Accept: 'application/json',
@@ -61,27 +69,17 @@ export const fetchUserDataByUid = async (uid) => {
 
 	try {
 		const response = await axios.request(config);
-		const { code, user } = response.data || {};
+		console.log('User API response:', response.data);
 
-		// 1) If code === 0, user is found. Return it
+		const { code, user } = response.data || {};
 		if (code === 0) {
 			return user;
 		}
-
-		// 2) If code === 2004, user is not found or canceled. We'll just return null
 		if (code === 2004) {
-			// We won't throw, to avoid the browser console error.
-			// But we can log a warning, or do nothing
-		//	console.warn(
-		//		`User with uid=${uid} not found. Possibly canceled or expired (code: 2004).`
-		//	);
-			return null; // or return {} if you prefer
+			return null;
 		}
-
-		// 3) Otherwise, some other error code
 		throw new Error(`User call responded with code: ${code}`);
 	} catch (error) {
-		// Already logs unexpected errors in the console
 		console.error('Error fetching user data:', error);
 		throw error;
 	}
@@ -89,26 +87,29 @@ export const fetchUserDataByUid = async (uid) => {
 
 /**
  * 2.5) Fetch user details by uid (POST request)
- *    Returns an object with { first_name, last_name, email, uid, ... }
+ *    Returns an object with { first_name, last_name, email, uid, etc }
  */
 export const fetchParentSubscriptionData = async (subscriptionId) => {
-	// Define a "params" object
+	// Log the subscription ID
+	console.log('Fetching parent subscription data for ID:', subscriptionId);
+
 	const params = {
 		aid: process.env.REACT_APP_PIANO_AID,
 		api_token: process.env.REACT_APP_PIANO_API_TOKEN,
-		subscription_id: subscriptionId, // Must pass subscription_id here
+		subscription_id: subscriptionId,
 	};
 
 	const config = {
 		method: 'get',
 		url: '/external-api/publisher/subscription/get',
 		headers: { Accept: 'application/json' },
-		// This is where you attach your query parameters
 		params,
 	};
 
 	try {
 		const response = await axios.request(config);
+		console.log('Parent subscription API response:', response.data);
+
 		if (response.data && response.data.subscription) {
 			return response.data.subscription;
 		} else {
@@ -125,33 +126,50 @@ export const fetchParentSubscriptionData = async (subscriptionId) => {
  *    Calls fetchSharedSubscriptions, then for each item calls fetchUserDataByUid.
  *    Returns a single, unified array of subscriptions with parent_* fields.
  */
-export const fetchMergedSubscriptionData = async (page, rowsPerPage) => {
+export const fetchMergedSubscriptionData = async (
+	page,
+	rowsPerPage,
+	filters
+) => {
 	try {
+		// Log input parameters
+		console.log('Fetching merged subscriptions with:', {
+			page,
+			rowsPerPage,
+			filters,
+		});
+
 		const sharedSubscriptions = await fetchSharedSubscriptions(
 			page,
-			rowsPerPage
+			rowsPerPage,
+			filters // Pass filters to fetchSharedSubscriptions
 		);
+
+		console.log('Fetched shared subscriptions:', sharedSubscriptions);
 
 		const merged = await Promise.all(
 			sharedSubscriptions.map(async (sub) => {
-				// 1) Fetch user data by UID
+				// Fetch user data by UID
 				let user = {};
 				try {
 					user = await fetchUserDataByUid(sub.uid);
+					console.log(`Fetched user data for UID ${sub.uid}:`, user);
 				} catch (error) {
 					console.error(`Error fetching user data for UID ${sub.uid}`, error);
 				}
 				if (!user) {
-					// If it's null, we know the parent user is "not found".
-					// We won't throw an error; we can keep partial data from the subscription itself.
-					user = {}; // so it doesn't break the "parent_first_name" usage
+					user = {}; // Ensure it doesn't break
 				}
 
-				// 2) Fetch the parent subscription details
+				// Fetch parent subscription details
 				let parentSubData = {};
 				try {
 					parentSubData = await fetchParentSubscriptionData(
 						sub.subscription_id
+					);
+					console.log(
+						`Fetched parent subscription for ID ${sub.subscription_id}:`,
+						parentSubData
 					);
 				} catch (error) {
 					console.error(
@@ -160,21 +178,20 @@ export const fetchMergedSubscriptionData = async (page, rowsPerPage) => {
 					);
 				}
 
-				// Pull out the fields you need
 				const { status_name_in_reports, term } = parentSubData || {};
 
-				// 3) Merge everything
-				return {
+				// Log the merged data for this subscription
+				const mergedData = {
 					...sub,
-					// From user data
 					parent_email: user?.email,
 					parent_first_name: user?.first_name,
 					parent_last_name: user?.last_name,
-
-					// From subscription data
 					status_name_in_reports,
-					term_name: term?.name, // If 'term' is present and has 'name'
+					term_name: term?.name,
 				};
+				console.log('Merged data for subscription:', mergedData);
+
+				return mergedData;
 			})
 		);
 

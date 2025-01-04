@@ -1,35 +1,38 @@
 import React, { useState } from 'react';
+import PropTypes from 'prop-types';
 
-const Header = ({ onFilterChange }) => {
+const Header = ({ fetchData }) => {
 	const [selectedStatuses, setSelectedStatuses] = useState([]);
 
-	// List of available statuses for the checkboxes
+	// API-aligned status values
 	const statuses = [
-		'Active',
-		'Cancelled',
-		'Completed',
-		'Expired',
-		'Failed and Retry',
-		'Payment Failure',
-		'Renewed',
-		'Upgraded',
+		{ label: 'Active', value: 'active' },
+		{ label: 'Cancelled', value: 'cancelled' },
+		{ label: 'Completed', value: 'completed' },
+		{ label: 'Expired', value: 'expired' },
+		{ label: 'Payment Failed', value: 'payment_failed' },
+		{ label: 'Upgraded', value: 'upgraded' },
+		{ label: 'Wont Renew', value: 'wont_renew' },
 	];
 
-	const handleStatusChange = (status) => {
-		let updatedStatuses;
-		if (selectedStatuses.includes(status)) {
-			// Remove status if already selected
-			updatedStatuses = selectedStatuses.filter((item) => item !== status);
-		} else {
-			// Add status if not selected
-			updatedStatuses = [...selectedStatuses, status];
-		}
-		setSelectedStatuses(updatedStatuses);
+	const handleStatusChange = (statusValue) => {
+		setSelectedStatuses((prevStatuses) =>
+			prevStatuses.includes(statusValue)
+				? prevStatuses.filter((item) => item !== statusValue)
+				: [...prevStatuses, statusValue]
+		);
+	};
 
-		// Pass the updated statuses to the parent component
-		if (onFilterChange) {
-			onFilterChange(updatedStatuses);
-		}
+	const handleFetchClick = () => {
+		fetchData(selectedStatuses);
+	};
+
+	const handleSelectAll = () => {
+		setSelectedStatuses(statuses.map((status) => status.value));
+	};
+
+	const handleClearAll = () => {
+		setSelectedStatuses([]);
 	};
 
 	return (
@@ -41,26 +44,41 @@ const Header = ({ onFilterChange }) => {
 				<div className='flex flex-col items-end border-t py-2 mt-4'>
 					<label className='text-md font-medium mb-2'>Filter by Status:</label>
 					<div className='flex flex-wrap gap-4 justify-end pb-2'>
-						{statuses.map((status) => (
+						{statuses.map(({ label, value }) => (
 							<label
-								key={status}
+								key={value}
 								className='flex items-center space-x-2 text-xs font-medium'
 							>
 								<input
 									type='checkbox'
-									value={status}
-									checked={selectedStatuses.includes(status)}
-									onChange={() => handleStatusChange(status)}
+									aria-label={`Filter by ${label}`}
+									checked={selectedStatuses.includes(value)}
+									onChange={() => handleStatusChange(value)}
 									className='h-3 w-3'
 								/>
-								<span>{status}</span>
+								<span>{label}</span>
 							</label>
 						))}
 					</div>
+					<div className='flex space-x-2 mt-2'>
+						<button className='btn btn-secondary' onClick={handleSelectAll}>
+							Select All
+						</button>
+						<button className='btn btn-secondary' onClick={handleClearAll}>
+							Clear All
+						</button>
+					</div>
+					<button className='btn btn-primary mt-4' onClick={handleFetchClick}>
+						Fetch
+					</button>
 				</div>
 			</div>
 		</header>
 	);
+};
+
+Header.propTypes = {
+	fetchData: PropTypes.func.isRequired,
 };
 
 export default Header;

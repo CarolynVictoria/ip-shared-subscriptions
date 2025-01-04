@@ -12,15 +12,20 @@ const Footer = ({
 			<div className='flex justify-between items-center mt-4'>
 				<button
 					className='btn btn-primary'
-					onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+					onClick={() => {
+						console.log('Current page before Previous:', currentPage);
+						setCurrentPage((prev) => Math.max(prev - 1, 1));
+					}}
 					disabled={currentPage === 1}
 				>
 					Previous
 				</button>
-				<span>Page {currentPage}</span>
 				<button
 					className='btn btn-primary'
-					onClick={() => setCurrentPage((prev) => prev + 1)}
+					onClick={() => {
+						console.log('Current page before Next:', currentPage);
+						setCurrentPage((prev) => prev + 1);
+					}}
 				>
 					Next
 				</button>
@@ -33,7 +38,11 @@ const Footer = ({
 				<select
 					id='rowsPerPage'
 					value={rowsPerPage}
-					onChange={(e) => setRowsPerPage(Number(e.target.value))}
+					onChange={(e) => {
+						const newRowsPerPage = Number(e.target.value);
+						console.log('Rows per page updated to:', newRowsPerPage);
+						setRowsPerPage(newRowsPerPage);
+					}}
 				>
 					<option value={10}>10</option>
 					<option value={20}>20</option>
