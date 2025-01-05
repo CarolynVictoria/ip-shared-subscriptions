@@ -16,7 +16,7 @@
 		"web-vitals": "^4.2.4"
 	},
 	"scripts": {
-		"start": "react-scripts start --port 3000",
+		"start": "node --no-deprecation node_modules/react-scripts/scripts/start.js --port 3000",
 		"dev": "concurrently --kill-others-on-fail --names \"REACT,BACKEND\" \"npm start\" \"npx nodemon backend/server.js\"",
 		"build": "react-scripts build",
 		"test": "react-scripts test",

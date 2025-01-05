@@ -1,82 +1,79 @@
 import express from 'express';
-import cors from 'cors'; // Import CORS middleware
+import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import { createProxyMiddleware } from 'http-proxy-middleware';
+import fetch from 'node-fetch';
 import dotenv from 'dotenv';
-import fetch from 'node-fetch'; // Import fetch for Node.js
 
-dotenv.config(); // Load environment variables
+dotenv.config();
 
 const app = express();
 
-// Step 1: Use CORS middleware to allow cross-origin requests from React frontend
+// Middleware
+app.use(helmet());
 app.use(cors());
+app.use(express.json()); // Parse JSON requests
 
-// Step 2: Add logging to track the requests being proxied to the external API
-app.use('/external-api', (req, res, next) => {
-	console.log('Proxying request to:', process.env.PIANO_API_URL + req.url); // Log the request URL
-	next(); // Pass to the next middleware (the proxy)
+const apiLimiter = rateLimit({
+	windowMs: 15 * 60 * 1000,
+	max: 50000,
+	standardHeaders: true,
+	legacyHeaders: false,
 });
 
-// Step 3: Set up proxy to forward requests to the external API
+app.use('/api/', apiLimiter);
+
+console.log('PIANO_API_URL:', process.env.PIANO_API_URL || 'undefined');
+
 app.use(
+	// Debug log for PIANO_API_URL
 	'/external-api',
 	createProxyMiddleware({
-		target: process.env.PIANO_API_URL, 
-		changeOrigin: true, // Modify the origin header to match the target
-		pathRewrite: { '^/external-api': '' }, // Remove '/external-api' from the forwarded requests
-		onProxyReq: (proxyReq, req, res) => {
-			// Log the full URL and query parameters being sent to the external API
-			console.log(`Proxying to: ${process.env.PIANO_API_URL}${req.url}`);
+		target: process.env.PIANO_API_URL || 'https://api.piano.io/api/v3',
+		changeOrigin: true,
+		pathRewrite: { '^/external-api': '' },
+		logLevel: 'warn',
+		onProxyReq: (proxyReq, req) => {
+			// Forward headers and body for POST requests
+			if (req.body) {
+				const bodyData = new URLSearchParams(req.body).toString();
+				proxyReq.setHeader('Content-Type', 'application/x-www-form-urlencoded');
+				proxyReq.write(bodyData);
+			}
+			proxyReq.removeHeader('cookie');
+		},
+		onError: (err, req, res) => {
+			console.error('Proxy error:', err.message);
+			res.status(500).json({ error: 'Proxy server error' });
 		},
 	})
 );
 
-// Step 4: Health check route for testing the server
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-	res.send('Server is healthy');
+	res.json({
+		status: 'healthy',
+		uptime: process.uptime(),
+		timestamp: new Date().toISOString(),
+	});
 });
 
-// Step 4.5: Filtering data
-app.get('/api/subscriptions', async (req, res) => {
-	const statusMapping = {
-		Active: 'active',
-		Cancelled: 'cancelled',
-		Completed: 'completed',
-		Expired: 'expired',
-		'Payment Failed': 'payment_failed',
-		Upgraded: 'upgraded',
-		'Wont Renew': 'wont_renew',
-	};
-
-	const { page = 1, rowsPerPage = 10, filters } = req.query;
-
+// Subscriptions endpoint
+app.get('/api/subscriptions', async (req, res, next) => {
 	try {
-		// Parse and map filters
-		const parsedFilters = filters ? JSON.parse(filters) : {};
-		const statuses = parsedFilters.statuses || [];
-		const mappedStatuses = statuses
-			.map((status) => statusMapping[status])
-			.filter(Boolean);
-
-		// Construct query parameters for the external API
 		const queryParams = new URLSearchParams({
-			limit: rowsPerPage,
-			offset: (page - 1) * rowsPerPage,
-			...(mappedStatuses.length > 0 && { status: mappedStatuses.join(',') }),
+			limit: 1000, // Example: fetch large batches
+			offset: 0,
 		});
-		console.log('Constructed external API query:', queryParams.toString());
 
-		// Make the external API request
 		const apiResponse = await fetch(
 			`${process.env.PIANO_API_URL}/subscriptions?${queryParams}`,
 			{
-				headers: {
-					Authorization: `Bearer ${process.env.PIANO_API_TOKEN}`,
-				},
+				headers: { Authorization: `Bearer ${process.env.PIANO_API_TOKEN}` },
 			}
 		);
 
-		// Handle API errors
 		if (!apiResponse.ok) {
 			throw new Error(
 				`External API request failed with status ${apiResponse.status}`
@@ -84,19 +81,28 @@ app.get('/api/subscriptions', async (req, res) => {
 		}
 
 		const data = await apiResponse.json();
-		res.json(data); // Return the response from the external API
+		res.json(data);
 	} catch (error) {
-		console.error('Error in /api/subscriptions:', error);
-		res.status(500).json({ error: 'Error fetching subscriptions' });
+		next(error);
 	}
 });
 
-// Step 5: Catch-all route for unmatched paths (React will handle static assets and frontend routes)
+// Catch-all route
 app.get('*', (req, res) => {
 	res.status(404).send('Route not found');
 });
 
-// Step 6: Start the server
+// Error handling middleware
+app.use((err, req, res, next) => {
+	console.error(err.stack);
+	const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+	res.status(statusCode).json({
+		error:
+			process.env.NODE_ENV === 'production' ? 'An error occurred' : err.message,
+	});
+});
+
+// Start server
 const PORT = process.env.BACKEND_PORT || 5555;
 app.listen(PORT, () => {
 	console.log(`Server running on http://localhost:${PORT}`);

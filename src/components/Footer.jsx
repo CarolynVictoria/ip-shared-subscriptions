@@ -1,31 +1,49 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const Footer = ({
 	currentPage,
 	setCurrentPage,
 	rowsPerPage,
 	setRowsPerPage,
+	totalItems,
 }) => {
+	const totalPages = Math.ceil(totalItems / rowsPerPage);
+
+	const handlePrevious = () => {
+		setCurrentPage((prev) => Math.max(prev - 1, 1));
+	};
+
+	const handleNext = () => {
+		setCurrentPage((prev) => Math.min(prev + 1, totalPages));
+	};
+
+	const handleRowsPerPageChange = (e) => {
+		const newRowsPerPage = Number(e.target.value);
+		setRowsPerPage(newRowsPerPage);
+		setCurrentPage(1); // Reset to the first page
+	};
+
 	return (
 		<div>
 			{/* Pagination Controls */}
 			<div className='flex justify-between items-center mt-4'>
 				<button
 					className='btn btn-primary'
-					onClick={() => {
-						console.log('Current page before Previous:', currentPage);
-						setCurrentPage((prev) => Math.max(prev - 1, 1));
-					}}
+					onClick={handlePrevious}
 					disabled={currentPage === 1}
+					aria-label='Go to previous page'
 				>
 					Previous
 				</button>
+				<span>
+					Page {currentPage} of {totalPages}
+				</span>
 				<button
 					className='btn btn-primary'
-					onClick={() => {
-						console.log('Current page before Next:', currentPage);
-						setCurrentPage((prev) => prev + 1);
-					}}
+					onClick={handleNext}
+					disabled={currentPage === totalPages || totalPages === 0}
+					aria-label='Go to next page'
 				>
 					Next
 				</button>
@@ -38,11 +56,8 @@ const Footer = ({
 				<select
 					id='rowsPerPage'
 					value={rowsPerPage}
-					onChange={(e) => {
-						const newRowsPerPage = Number(e.target.value);
-						console.log('Rows per page updated to:', newRowsPerPage);
-						setRowsPerPage(newRowsPerPage);
-					}}
+					onChange={handleRowsPerPageChange}
+					aria-label='Select number of rows per page'
 				>
 					<option value={10}>10</option>
 					<option value={20}>20</option>
@@ -51,6 +66,14 @@ const Footer = ({
 			</div>
 		</div>
 	);
+};
+
+Footer.propTypes = {
+	currentPage: PropTypes.number.isRequired,
+	setCurrentPage: PropTypes.func.isRequired,
+	rowsPerPage: PropTypes.number.isRequired,
+	setRowsPerPage: PropTypes.func.isRequired,
+	totalItems: PropTypes.number.isRequired,
 };
 
 export default Footer;

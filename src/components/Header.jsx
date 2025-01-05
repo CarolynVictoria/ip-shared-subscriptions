@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { statuses } from '../helpers/statusMapping';
 
-const Header = ({ fetchData }) => {
+const Header = ({ onFilterChange }) => {
 	const [selectedStatuses, setSelectedStatuses] = useState([]);
 
+	// Handle individual checkbox toggles
 	const handleStatusChange = (statusValue) => {
 		setSelectedStatuses((prevStatuses) =>
 			prevStatuses.includes(statusValue)
@@ -13,16 +14,23 @@ const Header = ({ fetchData }) => {
 		);
 	};
 
-	const handleFetchClick = () => {
-		fetchData(selectedStatuses);
-	};
+	// Apply filters when the "Fetch" button is clicked
+const handleFetchClick = () => {
+	console.log('Selected statuses:', selectedStatuses); // Debugging
+	onFilterChange(selectedStatuses);
+};
 
+	// Select all statuses
 	const handleSelectAll = () => {
-		setSelectedStatuses(statuses.map((status) => status.value));
+		const allStatuses = statuses.map((status) => status.value);
+		setSelectedStatuses(allStatuses);
+		onFilterChange(allStatuses);
 	};
 
+	// Clear all statuses
 	const handleClearAll = () => {
 		setSelectedStatuses([]);
+		onFilterChange([]);
 	};
 
 	return (
@@ -59,7 +67,7 @@ const Header = ({ fetchData }) => {
 						</button>
 					</div>
 					<button className='btn btn-primary mt-4' onClick={handleFetchClick}>
-						Fetch
+						Apply Filters
 					</button>
 				</div>
 			</div>
@@ -68,7 +76,7 @@ const Header = ({ fetchData }) => {
 };
 
 Header.propTypes = {
-	fetchData: PropTypes.func.isRequired,
+	onFilterChange: PropTypes.func.isRequired,
 };
 
 export default Header;
